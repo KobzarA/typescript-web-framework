@@ -1,0 +1,33 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "name": "Ihor"
+    },
+    {
+      "name": "Ihor",
+      "age": 4,
+      "id": 2
+    },
+    {
+      "name": "Ihor",
+      "age": 4,
+      "id": 3
+    },
+    {
+      "name": "",
+      "age": 48,
+      "id": 4
+    },
+    {
+      "name": "dsdss",
+      "age": 48,
+      "id": 5
+    },
+    {
+      "name": "KOska",
+      "age": 99,
+      "id": 6
+    }
+  ]
+}
