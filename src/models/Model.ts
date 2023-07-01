@@ -13,7 +13,7 @@ interface Sync<T> {
 
 interface Events {
   on(eventName: string, callback: () => void): void;
-  triger(eventName: string): void;
+  trigger(eventName: string): void;
 }
 
 export interface HasId {
@@ -28,12 +28,12 @@ export class Model<T extends HasId> {
   ) {}
 
   on = this.events.on;
-  triger = this.events.triger;
+  trigger = this.events.trigger;
   get = this.attributes.get;
 
   set(update: T): void {
     this.attributes.set(update);
-    this.events.triger('change');
+    this.events.trigger('change');
   }
 
   fetch(): void {
@@ -52,10 +52,10 @@ export class Model<T extends HasId> {
     this.sync
       .save(this.attributes.getAll())
       .then((res: AxiosResponse): void => {
-        this.triger('save');
+        this.trigger('save');
       })
       .catch(() => {
-        this.triger('error');
+        this.trigger('error');
       });
   }
 }

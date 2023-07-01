@@ -574,16 +574,25 @@ function hmrAccept(bundle /*: ParcelRequire */ , id /*: string */ ) {
 }
 
 },{}],"h7u1C":[function(require,module,exports) {
-var _userEdit = require("./views/UserEdit");
 var _user = require("./models/User");
-const user = (0, _user.User).buildUser({
-    name: "Petr",
-    age: 55
+var _collection = require("./models/Collection");
+var _userList = require("./views/UserList");
+// const user = User.buildUser({ name: 'Petr', age: 55 });
+// const userEdit = new UserEdit(document.getElementById('root'), user);
+// userEdit.render();
+const users = new (0, _collection.Collection)("http://localhost:3000/users", (json)=>{
+    return (0, _user.User).buildUser(json);
 });
-const userEdit = new (0, _userEdit.UserEdit)(document.getElementById("root"), user);
-userEdit.render();
+users.on("change", ()=>{
+    const root = document.getElementById("list");
+    if (!root) return;
+    users.models.forEach((user)=>console.log(user));
+    const userList = new (0, _userList.UserList)(root, users);
+    userList.render();
+});
+users.fetch();
 
-},{"./models/User":"4rcHn","./views/UserEdit":"3CihC"}],"4rcHn":[function(require,module,exports) {
+},{"./models/User":"4rcHn","./models/Collection":"dD11O","./views/UserList":"mUs49"}],"4rcHn":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "User", ()=>User);
@@ -608,7 +617,40 @@ class User extends (0, _model.Model) {
     }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3","./Eventing":"7459s","./Model":"f033k","./Attributes":"6Bbds","./ApiSync":"3wylh","./Collection":"dD11O"}],"7yMd3":[function(require,module,exports) {
+},{"./Model":"f033k","./Attributes":"6Bbds","./ApiSync":"3wylh","./Eventing":"7459s","./Collection":"dD11O","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"f033k":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Model", ()=>Model);
+class Model {
+    constructor(attributes, events, sync){
+        this.attributes = attributes;
+        this.events = events;
+        this.sync = sync;
+        this.on = this.events.on;
+        this.trigger = this.events.trigger;
+        this.get = this.attributes.get;
+    }
+    set(update) {
+        this.attributes.set(update);
+        this.events.trigger("change");
+    }
+    fetch() {
+        const id = this.attributes.get("id");
+        if (typeof id !== "number") throw new Error("Cannot fetch without an id");
+        this.sync.fetch(id).then((res)=>{
+            this.set(res.data);
+        });
+    }
+    save() {
+        this.sync.save(this.attributes.getAll()).then((res)=>{
+            this.trigger("save");
+        }).catch(()=>{
+            this.trigger("error");
+        });
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"7yMd3":[function(require,module,exports) {
 exports.interopDefault = function(a) {
     return a && a.__esModule ? a : {
         default: a
@@ -638,62 +680,7 @@ exports.export = function(dest, destName, get) {
     });
 };
 
-},{}],"7459s":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Eventing", ()=>Eventing);
-class Eventing {
-    constructor(){
-        this.events = {};
-        this.on = (eventName, callback)=>{
-            const handlers = this.events[eventName] || [];
-            handlers.push(callback);
-            this.events[eventName] = handlers;
-        };
-        this.triger = (eventName)=>{
-            const handlers = this.events[eventName];
-            if (!handlers || handlers.length === 0) return;
-            handlers.forEach((cb)=>{
-                cb();
-            });
-        };
-    }
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"f033k":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "Model", ()=>Model);
-class Model {
-    constructor(attributes, events, sync){
-        this.attributes = attributes;
-        this.events = events;
-        this.sync = sync;
-        this.on = this.events.on;
-        this.triger = this.events.triger;
-        this.get = this.attributes.get;
-    }
-    set(update) {
-        this.attributes.set(update);
-        this.events.triger("change");
-    }
-    fetch() {
-        const id = this.attributes.get("id");
-        if (typeof id !== "number") throw new Error("Cannot fetch without an id");
-        this.sync.fetch(id).then((res)=>{
-            this.set(res.data);
-        });
-    }
-    save() {
-        this.sync.save(this.attributes.getAll()).then((res)=>{
-            this.triger("save");
-        }).catch(()=>{
-            this.triger("error");
-        });
-    }
-}
-
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"6Bbds":[function(require,module,exports) {
+},{}],"6Bbds":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "Attributes", ()=>Attributes);
@@ -5057,6 +5044,28 @@ Object.entries(HttpStatusCode).forEach(([key, value])=>{
 });
 exports.default = HttpStatusCode;
 
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"7459s":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "Eventing", ()=>Eventing);
+class Eventing {
+    constructor(){
+        this.events = {};
+        this.on = (eventName, callback)=>{
+            const handlers = this.events[eventName] || [];
+            handlers.push(callback);
+            this.events[eventName] = handlers;
+        };
+        this.trigger = (eventName)=>{
+            const handlers = this.events[eventName];
+            if (!handlers || handlers.length === 0) return;
+            handlers.forEach((cb)=>{
+                cb();
+            });
+        };
+    }
+}
+
 },{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"dD11O":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
@@ -5074,48 +5083,72 @@ class Collection {
     get on() {
         return this.events.on;
     }
-    get triger() {
-        return this.events.triger;
+    get trigger() {
+        return this.events.trigger;
     }
     fetch() {
         (0, _axiosDefault.default).get(this.rootUrl).then((res)=>{
             res.data.forEach((value)=>{
                 this.models.push(this.deserialize(value));
             });
+            this.trigger("change");
         });
-        this.triger("change");
     }
 }
 
-},{"axios":"jo6P5","./Eventing":"7459s","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"3CihC":[function(require,module,exports) {
+},{"axios":"jo6P5","./Eventing":"7459s","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"mUs49":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "UserEdit", ()=>UserEdit);
-var _view = require("./View");
-var _userForm = require("./UserForm");
+parcelHelpers.export(exports, "UserList", ()=>UserList);
+var _collectionView = require("./CollectionView");
 var _userShow = require("./UserShow");
-class UserEdit extends (0, _view.View) {
-    regionsMap() {
-        return {
-            userShow: ".user-show",
-            userForm: ".user-form"
-        };
+class UserList extends (0, _collectionView.CollectionView) {
+    renderItem(model, itemParent) {
+        console.log(111);
+        new (0, _userShow.UserShow)(itemParent, model).render();
     }
-    onRender() {
-        new (0, _userShow.UserShow)(this.regions.userShow, this.model).render();
-        new (0, _userForm.UserForm)(this.regions.userForm, this.model).render();
+}
+
+},{"./CollectionView":"4BOou","./UserShow":"2Tlyi","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"4BOou":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "CollectionView", ()=>CollectionView);
+class CollectionView {
+    constructor(parent, collection){
+        this.parent = parent;
+        this.collection = collection;
     }
+    render() {
+        this.parent.innerHTML = "";
+        const templateElement = document.createElement("template");
+        for (let model of this.collection.models){
+            console.log("This loop doesn`t work");
+            const itemParent = document.createElement("div");
+            this.renderItem(model, itemParent);
+            templateElement.content.append(itemParent);
+        }
+        this.parent.append(templateElement.content);
+    }
+}
+
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"2Tlyi":[function(require,module,exports) {
+var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
+parcelHelpers.defineInteropFlag(exports);
+parcelHelpers.export(exports, "UserShow", ()=>UserShow);
+var _view = require("./View");
+class UserShow extends (0, _view.View) {
     template() {
         return `
-            <div>
-                <div class="user-show"></div>
-                <div class="user-form"></div>
-            </div>
+        <div>
+            <h1>User Details</h1>
+            <div>User name: ${this.model.get("name")}</div>
+            <div>User age: ${this.model.get("age")}</div>
+        </div>
         `;
     }
 }
 
-},{"./View":"5Vo78","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3","./UserForm":"gXSLD","./UserShow":"2Tlyi"}],"5Vo78":[function(require,module,exports) {
+},{"./View":"5Vo78","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"5Vo78":[function(require,module,exports) {
 var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
 parcelHelpers.defineInteropFlag(exports);
 parcelHelpers.export(exports, "View", ()=>View);
@@ -5164,69 +5197,10 @@ class View {
         this.bindEvents(templateElement.content);
         this.mapRegions(templateElement.content);
         this.onRender();
-        this.parent.appendChild(templateElement.content);
+        this.parent.append(templateElement.content);
     }
 }
 
-},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"gXSLD":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "UserForm", ()=>UserForm);
-var _view = require("./View");
-class UserForm extends (0, _view.View) {
-    eventsMap() {
-        return {
-            "click:.set-age": this.onSetAgeClick,
-            "click:.set-name": this.onSetNameClick,
-            "click:.save-model": this.onSaveModelClick
-        };
-    }
-    template() {
-        return `
-        <div>
-            
-            <input placeholder="${this.model.get("name")}"/>
-            <button class="set-name">Change Name</button>
-            <button class ="set-age">Set Random Age!</button>
-            <button class ="save-model">Save changes!</button>
-        </div>
-    `;
-    }
-    constructor(...args){
-        super(...args);
-        this.onSetAgeClick = ()=>{
-            this.model.setRandomAge();
-        };
-        this.onSetNameClick = ()=>{
-            const input = this.parent?.querySelector("input");
-            const name = input?.value;
-            this.model.set({
-                name
-            });
-        };
-        this.onSaveModelClick = ()=>{
-            this.model.save();
-        };
-    }
-}
-
-},{"./View":"5Vo78","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}],"2Tlyi":[function(require,module,exports) {
-var parcelHelpers = require("@parcel/transformer-js/src/esmodule-helpers.js");
-parcelHelpers.defineInteropFlag(exports);
-parcelHelpers.export(exports, "UserShow", ()=>UserShow);
-var _view = require("./View");
-class UserShow extends (0, _view.View) {
-    template() {
-        return `
-        <div>
-            <h1>User Form</h1>
-            <div>User name: ${this.model.get("name")}</div>
-            <div>User age: ${this.model.get("age")}</div>
-        </div>
-        `;
-    }
-}
-
-},{"./View":"5Vo78","@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}]},["9YmPA","h7u1C"], "h7u1C", "parcelRequire94c2")
+},{"@parcel/transformer-js/src/esmodule-helpers.js":"7yMd3"}]},["9YmPA","h7u1C"], "h7u1C", "parcelRequire94c2")
 
 //# sourceMappingURL=index.b71e74eb.js.map
